@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator PHEV</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --card: #16181c;
+    --border: #2a2d33;
+    --green: #a8ff3e;
+    --green-dim: #4a7018;
+    --red: #ff5c5c;
+    --yellow: #ffd23f;
+    --text: #e8eaed;
+    --muted: #7a7f89;
+    --radius: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-align: center;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #fff 40%, var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 32px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+    color: #c0c4cc;
+  }
+
+  .input-label .unit {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgba(168,255,62,0.15);
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 7px rgba(168,255,62,0.2);
+  }
+
+  .value-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--green);
+    min-width: 64px;
+    text-align: center;
+    cursor: text;
+  }
+
+  .value-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 48px;
+    text-align: center;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .result-block {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
+    transition: all 0.4s ease;
+  }
+
+  .result-block.positive {
+    background: rgba(168,255,62,0.06);
+    border-color: rgba(168,255,62,0.2);
+  }
+
+  .result-block.neutral {
+    background: rgba(255,210,63,0.06);
+    border-color: rgba(255,210,63,0.2);
+  }
+
+  .result-block.negative {
+    background: rgba(255,92,92,0.06);
+    border-color: rgba(255,92,92,0.2);
+  }
+
+  .result-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    transition: color 0.4s;
+  }
+
+  .result-value.positive { color: var(--green); }
+  .result-value.neutral { color: var(--yellow); }
+  .result-value.negative { color: var(--red); }
+
+  .result-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .mini-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .mini-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .mini-value {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .verdict {
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+    transition: all 0.4s;
+  }
+
+  .verdict.positive { background: rgba(168,255,62,0.1); color: var(--green); }
+  .verdict.neutral  { background: rgba(255,210,63,0.1); color: var(--yellow); }
+  .verdict.negative { background: rgba(255,92,92,0.1);  color: var(--red); }
+
+  .limit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .limit-val {
+    color: var(--yellow);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<h1>Kalkulator PHEV</h1>
+<p class="subtitle">Ładowanie vs Benzyna</p>
+
+<div class="card">
+  <div class="section-label">Parametry auta</div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Pojemność baterii <span class="unit">kWh</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="battery" min="5" max="40" step="0.5" value="18">
+      <div class="value-box"><input type="number" id="batteryVal" value="18" min="5" max="40" step="0.5"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Spalanie na benzynie <span class="unit">l/100km</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="consumption" min="3" max="20" step="0.1" value="13.3">
+      <div class="value-box"><input type="number" id="consumptionVal" value="13.3" min="3" max="20" step="0.1"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Pobór mocy elektrycznej <span class="unit">kW</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="power" min="5" max="80" step="1" value="50">
+      <div class="value-box"><input type="number" id="powerVal" value="50" min="5" max="80" step="1"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Prędkość jazdy <span class="unit">km/h</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="speed" min="20" max="160" step="1" value="120">
+      <div class="value-box"><input type="number" id="speedVal" value="120" min="20" max="160" step="1"></div>
+    </div>
+  </div>
+
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+    <div class="mini-label">Wyliczone zużycie elektryczne</div>
+    <div style="font-size:1.1rem;font-weight:500;color:var(--green)" id="calcEvConsumption">— kWh/100km</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">= pobór mocy ÷ prędkość × 100</div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">Limity SOC baterii</div>
+
+  <div style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+    Auto nie ładuje powyżej i nie rozładowuje poniżej pewnych progów — uwzględnij to żeby wynik był realny.
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Max naładowanie na ładowarce <span class="unit">%</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="socMax" min="50" max="100" step="1" value="100">
+      <div class="value-box"><input type="number" id="socMaxVal" value="100" min="50" max="100" step="1"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Min rozładowanie (silnik się włącza) <span class="unit">%</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="socMin" min="0" max="40" step="1" value="22">
+      <div class="value-box"><input type="number" id="socMinVal" value="22" min="0" max="40" step="1"></div>
+    </div>
+  </div>
+
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+    <div class="mini-label">Realnie dostępna energia</div>
+    <div style="font-size:1.1rem;font-weight:500;color:var(--green)" id="usableKwh">— kWh</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:3px" id="usableKm">— km realnego zasięgu</div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">Ceny</div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Cena prądu na ładowarce <span class="unit">zł/kWh</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="electricity" min="0.5" max="4" step="0.05" value="1.85">
+      <div class="value-box"><input type="number" id="electricityVal" value="1.85" min="0.5" max="4" step="0.05"></div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <div class="input-label">
+      Cena benzyny <span class="unit">zł/l</span>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="fuel" min="4" max="10" step="0.01" value="6.21">
+      <div class="value-box"><input type="number" id="fuelVal" value="6.21" min="4" max="10" step="0.01"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">Wynik</div>
+
+  <div class="grid2">
+    <div class="mini-card">
+      <div class="mini-label">Koszt ładowania</div>
+      <div class="mini-value" id="chargeCost">—</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-label">Zaoszczędzona benzyna</div>
+      <div class="mini-value" id="fuelSaved">—</div>
+    </div>
+  </div>
+
+  <div class="result-block" id="resultBlock">
+    <div class="result-label">Oszczędność na cyklu</div>
+    <div class="result-value" id="savings">—</div>
+    <div class="result-sub" id="savingsSub">—</div>
+  </div>
+
+  <div class="verdict" id="verdict">—</div>
+
+  <div class="limit-row">
+    <span>Granica opłacalności</span>
+    <span class="limit-val" id="breakEven">—</span>
+  </div>
+</div>
+
+<script>
+  const ids = ['battery','consumption','power','speed','electricity','fuel','socMax','socMin'];
+
+  ids.forEach(id => {
+    const slider = document.getElementById(id);
+    const input  = document.getElementById(id + 'Val');
+    slider.addEventListener('input', () => { input.value = slider.value; calc(); });
+    input.addEventListener('input', () => {
+      let v = parseFloat(input.value);
+      if (!isNaN(v)) { slider.value = v; calc(); }
+    });
+  });
+
+  function fmt(v, d=2) { return v.toFixed(d).replace('.', ','); }
+
+  function calc() {
+    const battery      = parseFloat(document.getElementById('batteryVal').value);
+    const consumption  = parseFloat(document.getElementById('consumptionVal').value);
+    const power        = parseFloat(document.getElementById('powerVal').value);
+    const speed        = parseFloat(document.getElementById('speedVal').value);
+    const electricity  = parseFloat(document.getElementById('electricityVal').value);
+    const fuel         = parseFloat(document.getElementById('fuelVal').value);
+    const socMax       = parseFloat(document.getElementById('socMaxVal').value) / 100;
+    const socMin       = parseFloat(document.getElementById('socMinVal').value) / 100;
+
+    const evConsumption = (power / speed) * 100;
+    document.getElementById('calcEvConsumption').textContent = evConsumption.toFixed(1).replace('.', ',') + ' kWh/100km';
+
+    const usableFraction = Math.max(0, socMax - socMin);
+    const usableKwh      = battery * usableFraction;
+    const usableKm       = (usableKwh / evConsumption) * 100;
+
+    document.getElementById('usableKwh').textContent = fmt(usableKwh) + ' kWh';
+    document.getElementById('usableKm').textContent  = '≈ ' + fmt(usableKm, 0) + ' km realnego zasięgu';
+
+    const chargeCost  = usableKwh * electricity;
+    const fuelLiters  = (consumption / 100) * usableKm;
+    const fuelValue   = fuelLiters * fuel;
+    const saving      = fuelValue - chargeCost;
+    const breakEven   = usableKwh > 0 ? fuelValue / usableKwh : 0;
+
+    document.getElementById('chargeCost').textContent = fmt(chargeCost) + ' zł';
+    document.getElementById('fuelSaved').textContent  = fmt(fuelValue) + ' zł';
+
+    const rb  = document.getElementById('resultBlock');
+    const sv  = document.getElementById('savings');
+    const sub = document.getElementById('savingsSub');
+    const vd  = document.getElementById('verdict');
+
+    rb.className  = 'result-block';
+    sv.className  = 'result-value';
+    vd.className  = 'verdict';
+
+    if (saving > 2) {
+      rb.classList.add('positive'); sv.classList.add('positive'); vd.classList.add('positive');
+      sv.textContent  = '+ ' + fmt(saving) + ' zł';
+      sub.textContent = 'oszczędzasz na każdym pełnym ładowaniu';
+      vd.textContent  = '✓ Opłaca się ładować';
+    } else if (saving >= -2) {
+      rb.classList.add('neutral'); sv.classList.add('neutral'); vd.classList.add('neutral');
+      sv.textContent  = '≈ ' + fmt(Math.abs(saving)) + ' zł';
+      sub.textContent = 'wychodzi prawie na zero';
+      vd.textContent  = '~ Obojętne — zależy od czasu';
+    } else {
+      rb.classList.add('negative'); sv.classList.add('negative'); vd.classList.add('negative');
+      sv.textContent  = '− ' + fmt(Math.abs(saving)) + ' zł';
+      sub.textContent = 'ładowanie droższe niż benzyna';
+      vd.textContent  = '✗ Nie opłaca się ładować';
+    }
+
+    document.getElementById('breakEven').textContent = fmt(breakEven) + ' zł/kWh';
+  }
+
+  calc();
+</script>
+</body>
+</html>
